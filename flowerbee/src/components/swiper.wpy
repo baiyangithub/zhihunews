@@ -1,0 +1,126 @@
+<style lang="less">
+.swiper{
+    width:100%;
+    background: deepskyblue;
+}
+.banners {
+  width: 100%;
+  height: 200px;
+}
+
+.banner{
+  position: relative;
+}
+
+.banner-image{
+  width: 100%;
+  height: 100%;
+}
+
+.banner-title{
+  color: #FFF;
+  position: absolute;
+  width: 100%;
+  padding-left: 16px;
+  padding-right: 16px; 
+  bottom: 30px;
+  font-size: 16px;
+   left: 0;
+}
+
+
+</style>
+
+<template>
+    <view class="swiper">
+        <swiper indicator-dots="{{indicatorDots}}"
+                autoplay="{{autoplay}}" 
+                class="banners" 
+                interval="{{interval}}" 
+                duration="{{duration}}">
+            <block wx:for="{{banner}}" wx:key="this">
+            <swiper-item class="banner" >
+                <image src="{{item.image}}"  
+                data-id="{{item.id}}" 
+                bindtap="bindViewTap" 
+                class="banner-image" 
+                width="100%" 
+                height="100%"/>
+                <text class="banner-title">{{item.title}}</text>
+            </swiper-item>
+            </block>
+        </swiper>
+    </view>
+    
+</template>
+
+<script>
+import wepy from "wepy";
+export default class Swiper extends wepy.component {
+    data = {
+    list: [],
+    duration: 2000,
+    indicatorDots: true,
+    autoplay: true,
+    interval: 3000,
+    loading: false,
+    plain: false
+  }
+  //事件处理函数
+  bindViewTap(e) {
+    wx.navigateTo({
+      url: '../detail/detail?id=' + e.target.dataset.id
+    })
+  }
+  loadMore (e) {
+    if (this.data.list.length === 0) return
+    var date = this.getNextDate()
+    var that = this
+    that.setData({ loading: true })
+    wx.request({
+      url: 'http://news.at.zhihu.com/api/4/news/before/' + (Number(utils.formatDate(date)) + 1),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      success (res) {
+        console.log(res)
+         that.setData({
+           loading: false,
+           list: that.data.list.concat([{ header: utils.formatDate(date, '-') }]).concat(res.data.stories)
+         })
+      }
+    })
+  }
+  getNextDate (){
+    const now = new Date()
+    now.setDate(now.getDate() - this.index++)
+    return now
+  }
+  onLoad () {
+    let that = this
+    wx.request({
+      url: 'http://news-at.zhihu.com/api/4/news/latest',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      success (res) {
+         that.setData({
+           banner: res.data.top_stories,
+           list: [{ header: '今日热闻' }].concat(res.data.stories)
+         })
+      }
+    })
+    this.index = 1
+    //调用应用实例的方法获取全局数据
+    // app.getUserInfo(function(userInfo){
+    //   //更新数据
+    //   that.setData({
+    //     userInfo:userInfo
+    //   })
+    // })
+    
+  }
+}
+</script>
+
+

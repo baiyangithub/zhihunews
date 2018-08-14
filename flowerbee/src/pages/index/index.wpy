@@ -1,0 +1,219 @@
+<style lang="less">
+    .swiper{
+    width:100%;
+}
+.banners {
+  width: 100%;
+  height: 200px;
+}
+
+.banner{
+  position: relative;
+}
+
+.banner-image{
+  width: 100%;
+  height: 100%;
+}
+
+.banner-title{
+  color: #FFF;
+  position: absolute;
+  width: 100%;
+  padding-left: 16px;
+  padding-right: 16px; 
+  bottom: 30px;
+  font-size: 16px;
+   left: 0;
+}
+.list{
+    width: 100%;
+  }
+  .item{
+    height: 180rpx;
+    background: #fff;
+    width: 92%;
+    margin-left: 2%;
+    margin-top: 20rpx;
+    border-radius: 10rpx;
+    font-size: 15px;
+    padding: 1% 2%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #eee;
+    border-bottom: 1px solid #ddd;
+    .image{
+      flex: 1;
+      height: 90%;
+      display: absolute;
+    }
+    text{
+      flex: 3;
+      box-sizing: border-box;
+      padding: 20rpx;
+      padding-top: 0;
+      padding-bottom: 40rpx;
+    }
+  }
+  .title{
+    background: none;
+    color: #999;
+    font-size: 14px;
+    height: 60rpx;
+    padding: 20rpx;
+    padding-bottom: 0;
+    margin-left: 20rpx;
+  }
+  .btn{
+      height: 40rpx;
+      width: 96%;
+      border-radius: 10rpx;
+      line-height: 50rpx;
+      margin: 50rpx 0;
+      button{
+        background: #1AAD19;
+        line-height: 70rpx;
+        font-size: 14px;
+        color: #fff;
+        position: relative;
+        image{
+          position: absolute;
+          width: 200rpx;
+          height: 160rpx;
+          z-index: 2;
+          left: 44%;
+          top: -110%;
+          transform: translate(-50%);
+        }
+      }
+    }
+</style>
+
+<template>
+    <view class="swiper">
+      <swiper indicator-dots="{{indicatorDots}}"
+              autoplay="{{autoplay}}" 
+              class="banners" 
+              interval="{{interval}}" 
+              duration="{{duration}}"
+              circular="{{circular}}">
+            <block wx:for="{{indexData.counter.index_data.banner}}" wx:key="*this">
+            <swiper-item class="banner" >
+              <image src="{{item.image}}"  
+                data-id="{{item.id}}" 
+                class="banner-image" 
+                width="100%" 
+                height="100%"
+                @tap="handelDetailClick('{{item.id}}')"/>
+                <text class="banner-title">{{item.title}}</text>
+            </swiper-item>
+          </block>
+      </swiper>
+
+      <view class="list">
+        <scroll-view
+          scroll-y= true
+          wx:for="{{indexData.counter.index_data.list}}"
+          wx:key="*this"
+          >
+          <view wx:if="{{item.header}}" class="scroll-view-item title">{{item.header}}</view>
+          <view wx:else class="scroll-view-item item"
+          @tap="handelDetailClick('{{item.id}}')">
+            <text>{{item.title}}</text>
+            <image src="{{item.images[0]}}" class="image" width="20%"/>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="btn">
+        <button 
+        @tap ="handleButtonClick()"
+        loading='{{ended}}'>更多</button>
+      </view>
+
+
+
+    </view>
+    
+
+</template>
+
+<script>
+import wepy from 'wepy'
+import { connect } from 'wepy-redux'
+import { get_index_data , load_data_more } from '../../store/actions' 
+import getLocalDate from '../../utils/util.js'
+
+  @connect({
+    indexData (state) { 
+      //reducer中的index_data等
+      // console.log(state)
+      return state
+    }
+  }, {
+    getIndexData : get_index_data,
+    load_data_more
+  })
+
+export default class Index extends wepy.page{
+    config = {
+        navigationBarTitleText: '知乎日报'
+    }
+    components = {
+    }
+
+
+    data = {
+    duration: 2000,
+    indicatorDots: true,
+    autoplay: true,
+    interval: 3000,
+    circular: true,
+    localDate: 0,
+    loadMoreCount: 0,
+    localTime: 0
+
+  }
+
+    computed = {
+    }
+
+    methods = {
+      handleButtonClick(){
+        this.data.localDate = getLocalDate(this.data.localTime - 86400000 * this.data.loadMoreCount++)
+        this.setData({ ended: true })
+        // console.log(this.data.localDate)
+        this.methods.load_data_more(this.data.localDate)
+        console.log(this.data.indexData.counter.ended)
+        
+        var timer = setInterval(() => {
+          if(!this.data.indexData.counter.ended){
+            setTimeout(() =>{
+              this.setData({ ended: false })
+            },500)
+            clearInterval(timer)
+          }
+        }, 50);
+      },
+      handelDetailClick(id){
+        // console.log("详情页" + id)
+        wx.navigateTo({
+          url: '/pages/index_detail/index_detail?id=' + id
+        })
+      }
+    }
+
+    onLoad() {
+      this.data.localTime = new Date().getTime()
+      this.data.localDate = getLocalDate(this.data.localTime)
+      this.methods.getIndexData()   
+    }
+  
+}
+</script>
+
+
+
+
